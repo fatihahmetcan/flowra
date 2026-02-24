@@ -30,4 +30,12 @@ Routes -> Controllers -> Services -> Repositories -> Database
 cd backend 
 npm install
 npm run dev
+Port 3000
+```
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+Port 5173
 ```
