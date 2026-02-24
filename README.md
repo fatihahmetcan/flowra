@@ -5,14 +5,16 @@ Flowra is a leightweight, extensible ERP system for smnall to medium-sized servi
 Many small businesses rely on spreadsheets, documents and chat messages for daily operations. Flowra provides a structured system that is fast to set up and easy to use. 
 
 ## MVP Features 
-- Customers & projects
-- Invoicing (create offers, convert to invoices, track payment status)
-- Time tracking (per project / employee)
+- Customer management
+- Project management
+- Offers & Invoicing (create offers, convert to invoices, track payment status)
+- Time tracking 
 - Budget tracking 
+- Dashboard overview
 
 ## Tech Stack
 - Backend: Node.js, Express, TypeScript, PostgresSQL (planned)
-- Frontend: React, TypeScript, Tailwind CSS (planned)
+- Frontend: React, TypeScript, React Router,  Tailwind CSS (planned)
 
 ## Architecture 
 Layered architecture (Enterprise-style):
