@@ -20,6 +20,42 @@ enum ProjectStatus {
   DELAYED
 }
 
+enum EmployeeRole {
+  ADMIN
+  OFFICE
+  FOREMAN
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum TaskStatus {
+  TODO
+  DOING
+  DONE
+}
+
+enum EquipmentStatus {
+  AVAILABLE
+  ON_SITE
+  REPAIR
+}
+
+enum TimeTrackingStatus {
+  PENDING
+  APPROVED
+  LOCKED
+}
+
+enum InvoiceStatus {
+  DRAFT
+  SENT
+  PAID
+  OVERDUE
+}
+
 // --- MODELS ---
 
 model Customer {
@@ -39,45 +75,75 @@ model Customer {
 }
 
 model Employee {
-  id             String         @id @default(uuid())
-  employeeId     String         @unique
-  role           String         // admin | office | foreman
-  firstName      String
-  lastName       String
-  email          String         @unique
-  passwordHash   String
-  status         String         @default("active")
-  managedProjects Project[]     @relation("ProjectForeman")
-  assignments    Assignment[]
-  timeLogs       TimeTracking[]
-  uploadedImages ProjectImage[]
-  createdAt      DateTime       @default(now())
+  id              String           @id @default(uuid())
+  employeeId      String           @unique
+  role            EmployeeRole
+  firstName       String
+  lastName        String
+  email           String           @unique
+  passwordHash    String
+  status          EmployeeStatus   @default(ACTIVE)
+  managedProjects Project[]        @relation("ProjectForeman")
+  assignments     Assignment[]
+  timeLogs        TimeTracking[]
+  uploadedImages  ProjectImage[]
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
 }
 
 model Project {
-  id               String         @id @default(uuid())
-  name             String
-  customerId       String
-  customer         Customer       @relation(fields: [customerId], references: [id])
-  foremanId        String
-  foreman          Employee       @relation("ProjectForeman", fields: [foremanId], references: [id])
-  status           ProjectStatus  @default(PLANNED)
-  startDate        DateTime?
-  tasks            Task[]
-  assignments      Assignment[]
-  timeLogs         TimeTracking[]
-  images           ProjectImage[]
-  invoices         Invoice[]
-  createdAt        DateTime       @default(now())
+  id          String         @id @default(uuid())
+  name        String
+  customerId  String
+  customer    Customer       @relation(fields: [customerId], references: [id])
+  foremanId   String
+  foreman     Employee       @relation("ProjectForeman", fields: [foremanId], references: [id])
+  status      ProjectStatus  @default(PLANNED)
+  startDate   DateTime?
+  tasks       Task[]
+  assignments Assignment[]
+  timeLogs    TimeTracking[]
+  images      ProjectImage[]
+  invoices    Invoice[]
+  createdAt   DateTime       @default(now())
+  updatedAt   DateTime       @updatedAt
+
+  @@index([customerId])
+  @@index([foremanId])
 }
 
 model Task {
-  id        String   @id @default(uuid())
+  id        String     @id @default(uuid())
   projectId String
-  project   Project  @relation(fields: [projectId], references: [id])
+  project   Project    @relation(fields: [projectId], references: [id])
   title     String
-  status    String   @default("todo")
-  createdAt DateTime @default(now())
+  status    TaskStatus @default(TODO)
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@index([projectId])
+}
+
+model EquipmentCategory {
+  id        String      @id @default(uuid())
+  name      String      @unique
+  equipment Equipment[]
+  createdAt DateTime    @default(now())
+  updatedAt DateTime    @updatedAt
+}
+
+model Equipment {
+  id              String          @id @default(uuid())
+  categoryId      String
+  category        EquipmentCategory @relation(fields: [categoryId], references: [id])
+  internalAssetId String          @unique
+  name            String
+  status          EquipmentStatus @default(AVAILABLE)
+  assignments     Assignment[]
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([categoryId])
 }
 
 model Assignment {
@@ -86,21 +152,33 @@ model Assignment {
   project       Project  @relation(fields: [projectId], references: [id])
   employeeId    String
   employee      Employee @relation(fields: [employeeId], references: [id])
+  equipmentId   String
+  equipment     Equipment @relation(fields: [equipmentId], references: [id])
   scheduledDate DateTime
   createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
 
+  @@index([projectId])
+  @@index([employeeId])
+  @@index([equipmentId])
   @@index([scheduledDate, employeeId])
+  @@index([scheduledDate, equipmentId])
 }
 
 model TimeTracking {
-  id        String   @id @default(uuid())
-  projectId String
-  project   Project  @relation(fields: [projectId], references: [id])
+  id         String             @id @default(uuid())
+  projectId  String
+  project    Project            @relation(fields: [projectId], references: [id])
   employeeId String
-  employee  Employee @relation(fields: [employeeId], references: [id])
-  hours     Decimal  @db.Decimal(5, 2)
-  workDate  DateTime
-  status    String   @default("pending")
+  employee   Employee           @relation(fields: [employeeId], references: [id])
+  hours      Decimal            @db.Decimal(5, 2)
+  workDate   DateTime
+  status     TimeTrackingStatus @default(PENDING)
+  createdAt  DateTime           @default(now())
+  updatedAt  DateTime           @updatedAt
+
+  @@index([projectId])
+  @@index([employeeId])
 }
 
 model ProjectImage {
@@ -111,6 +189,11 @@ model ProjectImage {
   uploader    Employee @relation(fields: [uploadedBy], references: [id])
   fileUrl     String
   isSitePhoto Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([projectId])
+  @@index([uploadedBy])
 }
 
 model Invoice {
@@ -118,10 +201,14 @@ model Invoice {
   invoiceNumber String        @unique
   projectId     String
   project       Project       @relation(fields: [projectId], references: [id])
-  status        String        @default("draft")
+  status        InvoiceStatus @default(DRAFT)
   grossAmount   Decimal       @db.Decimal(12, 2)
   dueDate       DateTime
   items         InvoiceItem[]
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([projectId])
 }
 
 model InvoiceItem {
@@ -132,4 +219,8 @@ model InvoiceItem {
   quantity        Decimal @db.Decimal(10, 2)
   unitPrice       Decimal @db.Decimal(12, 2)
   totalLineAmount Decimal @db.Decimal(12, 2)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([invoiceId])
 }
