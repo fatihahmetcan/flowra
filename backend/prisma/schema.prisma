@@ -1,0 +1,135 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// --- ENUMS ---
+enum ClientType {
+  PRIVATE
+  BUSINESS
+}
+
+enum ProjectStatus {
+  PLANNED
+  ACTIVE
+  COMPLETED
+  DELAYED
+}
+
+// --- MODELS ---
+
+model Customer {
+  id                String    @id @default(uuid())
+  customerCode      String    @unique
+  type              ClientType
+  companyName       String?
+  firstName         String?
+  lastName          String?
+  email             String    @unique
+  streetHouseNumber String
+  postalCode        String
+  city              String
+  projects          Project[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+}
+
+model Employee {
+  id             String         @id @default(uuid())
+  employeeId     String         @unique
+  role           String         // admin | office | foreman
+  firstName      String
+  lastName       String
+  email          String         @unique
+  passwordHash   String
+  status         String         @default("active")
+  managedProjects Project[]     @relation("ProjectForeman")
+  assignments    Assignment[]
+  timeLogs       TimeTracking[]
+  uploadedImages ProjectImage[]
+  createdAt      DateTime       @default(now())
+}
+
+model Project {
+  id               String         @id @default(uuid())
+  name             String
+  customerId       String
+  customer         Customer       @relation(fields: [customerId], references: [id])
+  foremanId        String
+  foreman          Employee       @relation("ProjectForeman", fields: [foremanId], references: [id])
+  status           ProjectStatus  @default(PLANNED)
+  startDate        DateTime?
+  tasks            Task[]
+  assignments      Assignment[]
+  timeLogs         TimeTracking[]
+  images           ProjectImage[]
+  invoices         Invoice[]
+  createdAt        DateTime       @default(now())
+}
+
+model Task {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  title     String
+  status    String   @default("todo")
+  createdAt DateTime @default(now())
+}
+
+model Assignment {
+  id            String   @id @default(uuid())
+  projectId     String
+  project       Project  @relation(fields: [projectId], references: [id])
+  employeeId    String
+  employee      Employee @relation(fields: [employeeId], references: [id])
+  scheduledDate DateTime
+  createdAt     DateTime @default(now())
+
+  @@index([scheduledDate, employeeId])
+}
+
+model TimeTracking {
+  id        String   @id @default(uuid())
+  projectId String
+  project   Project  @relation(fields: [projectId], references: [id])
+  employeeId String
+  employee  Employee @relation(fields: [employeeId], references: [id])
+  hours     Decimal  @db.Decimal(5, 2)
+  workDate  DateTime
+  status    String   @default("pending")
+}
+
+model ProjectImage {
+  id          String   @id @default(uuid())
+  projectId   String
+  project     Project  @relation(fields: [projectId], references: [id])
+  uploadedBy  String
+  uploader    Employee @relation(fields: [uploadedBy], references: [id])
+  fileUrl     String
+  isSitePhoto Boolean  @default(true)
+}
+
+model Invoice {
+  id            String        @id @default(uuid())
+  invoiceNumber String        @unique
+  projectId     String
+  project       Project       @relation(fields: [projectId], references: [id])
+  status        String        @default("draft")
+  grossAmount   Decimal       @db.Decimal(12, 2)
+  dueDate       DateTime
+  items         InvoiceItem[]
+}
+
+model InvoiceItem {
+  id              String  @id @default(uuid())
+  invoiceId       String
+  invoice         Invoice @relation(fields: [invoiceId], references: [id])
+  description     String
+  quantity        Decimal @db.Decimal(10, 2)
+  unitPrice       Decimal @db.Decimal(12, 2)
+  totalLineAmount Decimal @db.Decimal(12, 2)
+}
