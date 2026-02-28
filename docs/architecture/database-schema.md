@@ -114,7 +114,7 @@ erDiagram
         decimal unit_price
         decimal total_line_amount
     }
-
+    
 ---
 
 ## Indexing & Performance Optimization
