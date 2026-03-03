@@ -66,6 +66,7 @@ model Customer {
   firstName         String?
   lastName          String?
   email             String    @unique
+  phoneNumber       String
   streetHouseNumber String
   postalCode        String
   city              String
