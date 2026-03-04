@@ -1,12 +1,23 @@
-import express from "express";
+import app from './app';
+import { prisma } from './config/prisma';
 
-const app = express();
-const PORT = 3000;
-
-app.get("/", (req, res ) => {
-    res.json({ message: "Flowra API runnig" }); 
+process.on('uncaughtException', (err: Error) => {
+    console.error('UNCAUGHT EXCEPTION! Shutting down...');
+    console.error(err.name, err.message);
+    process.exit(1);
 });
 
-app.listen(PORT, () => {
-    console.log(`Server runnibg on port ${PORT}`);
+const PORT = process.env.PORT || 3000;
+
+const server = app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
+
+process.on('unhandledRejection', (err: Error) => {
+    console.log('UNHANDLED REJECTION! Shutting down...');
+    console.log(err.name, err.message);
+
+    server.close(() => {
+        process.exit(1);
+    });
 });
