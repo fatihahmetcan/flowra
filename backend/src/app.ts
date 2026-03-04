@@ -12,7 +12,7 @@ app.get('/health-check', ( req: Request, res: Response ) => {
     res.status(200).json({ status: 'success', message: 'API is running'})
 });
 
-app.all('*', ( req: Request, res: Response, next ) => {
+app.all('/{*path}', ( req: Request, res: Response, next ) => {
     next(new AppError(`Can't find ${req.originalUrl} on this server!`, 404));
 });
 
