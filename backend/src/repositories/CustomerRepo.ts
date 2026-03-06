@@ -46,4 +46,21 @@ export class CustomerRepo {
         });
     }
 
+    // Update an existing customer record by ID
+    async update(id: string, data: Prisma.CustomerUpdateInput): Promise<Customer> {
+        return prisma.customer.update({
+            where: { id },
+            data,
+        });
+    }
+
+    // Delete a customer record by ID
+    async delete(id: string): Promise<Customer> {
+        return prisma.customer.delete({
+            where: { id },
+        });
+    }
+
+
+
 }
