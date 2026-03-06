@@ -77,4 +77,41 @@ export class CustomerService {
 
         return customer;
     }
+
+    // Update an existing customer record
+    async updateCustomer(id: string, data: Prisma.CustomerUpdateInput): Promise<Customer> {
+
+        const customer = await this.customerRepo.findById(id);
+        if (!customer) {
+            throw new AppError('No customer found with that ID', 404);
+        }
+
+        if (data.email && typeof data.email === 'string') {
+            const existing= await this.customerRepo.findAll({
+                where: {
+                    email: data.email,
+                    NOT: { id: id }
+                },
+            });
+
+            if (existing.total > 0) {
+                throw new AppError('This email is already in use by another customer', 404);
+            }
+        }
+
+        return this.customerRepo.update(id, data);
+    }
+
+    // Deletes a customer record
+    async deleteCustomer(id: string): Promise<void> {
+        const customer = await this.customerRepo.findById(id);
+        
+        if (!customer) {
+            throw new AppError('No customer found with that ID', 404);
+        }
+
+        // Note: Later add checks here to prevent deletion
+        // if customer has active projects or unpaid inovices.
+        await this.customerRepo.delete(id);
+    }
 }
