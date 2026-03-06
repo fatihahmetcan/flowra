@@ -12,6 +12,8 @@ router
 
 router
     .route('/:id')
-    .get(customerController.getCustomerById);
+    .get(customerController.getCustomerById)
+    .patch(customerController.updateCustomer)
+    .delete(customerController.deleteCustomer);
 
 export default router;
