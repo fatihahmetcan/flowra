@@ -60,7 +60,7 @@ export class CustomerController {
         const customer = await this.customerService.updateCustomer(req.params.id as string, req.body);
 
         res.status(200).json({
-            status: 'succcess',
+            status: 'success',
             data: {
                 customer,
             },
@@ -73,9 +73,6 @@ export class CustomerController {
         await this.customerService.deleteCustomer(req.params.id as string);
 
         // 204 No Content is the standard for successful deletions
-        res.status(204).json({
-            status: 'success',
-            data: null,
-        });
+        res.status(204).send();
     });
 }

@@ -1,28 +1,13 @@
 import { CustomerRepo } from "../repositories/CustomerRepo";
 import { AppError } from "../utils/AppError";
 import { Prisma, Customer } from "@prisma/client";
+import { prisma } from "../config/prisma";
 
 export class CustomerService {
     private customerRepo: CustomerRepo;
 
     constructor() {
         this.customerRepo = new CustomerRepo();
-    }
-
-    // Generate the next customer code (e.g., C-000001)
-    private async generateCustomerCode(): Promise<string> {
-        const customers = await this.customerRepo.findAll({
-            take: 1,
-            orderBy: { customerCode: 'desc' },
-        });
-
-        if (customers.items.length === 0) return 'C-000001';
-
-        const lastCode = customers.items[0].customerCode; // e.g., "C-000042"
-        const lastNumber = parseInt(lastCode.split('-')[1], 10);
-        const nextNumber = lastNumber + 1;
-
-        return `C-${nextNumber.toString().padStart(6, '0')}`;
     }
 
     // Create a new customer with a unique business code.
@@ -33,16 +18,25 @@ export class CustomerService {
         });
 
         if (existing.total > 0) {
-            throw new AppError('A customer with this email already exist', 400);
+            throw new AppError('A customer with this email already exist', 409);
         }
 
-        // 2. Generate the unique customer code
-        const customerCode = await this.generateCustomerCode();
+        return prisma.$transaction(async (tx) => {
+            // 2. Generate the unique customer code
+            const nextValResult = await tx.$queryRaw<{ nextval: bigint }[]>`
+                SELECT nextval('customer_code_seq') AS nextval
+            `;
 
-        // 3. Save to database via Repo
-        return this.customerRepo.create({
-            ...data,
-            customerCode,
+            const nextId = Number(nextValResult[0].nextval);
+            const formattedCode = `C-${nextId.toString().padStart(6, '0')}`;
+
+            // 3. Save to database
+            return tx.customer.create({
+                data: {
+                    ...data,
+                    customerCode: formattedCode,
+                },
+            });
         });
     }
 
@@ -95,7 +89,7 @@ export class CustomerService {
             });
 
             if (existing.total > 0) {
-                throw new AppError('This email is already in use by another customer', 404);
+                throw new AppError('This email is already in use by another customer', 409);
             }
         }
 
